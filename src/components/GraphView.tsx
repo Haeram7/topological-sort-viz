@@ -1,10 +1,13 @@
 import { EDGES, VERTICES, VIEWBOX } from '../data/graph';
 
+type VertexColor = 'white' | 'gray' | 'black';
+
 type GraphViewProps = {
   activeVertex?: string | null;
   activeEdge?: [string, string] | null;
   doneVertices?: string[];
   vertexBadges?: Record<string, string | number>;
+  vertexColors?: Record<string, VertexColor>;
 };
 
 const R = 22;
@@ -23,6 +26,18 @@ const COLORS = {
   edgeActive: '#1f2937',
   badgeFill: '#2563eb',
   badgeText: '#ffffff',
+  grayFill: '#fde047',
+  grayStroke: '#ca8a04',
+  blackFill: '#374151',
+  blackStroke: '#1f2937',
+  blackText: '#ffffff',
+};
+
+// DFS 색 상태 → [채움, 테두리, 글자]
+const DFS_STYLE: Record<VertexColor, [string, string, string]> = {
+  white: [COLORS.vertexFill, COLORS.vertexStroke, COLORS.vertexText],
+  gray: [COLORS.grayFill, COLORS.grayStroke, COLORS.vertexText],
+  black: [COLORS.blackFill, COLORS.blackStroke, COLORS.blackText],
 };
 
 const POS = Object.fromEntries(VERTICES.map((v) => [v.id, v]));
@@ -49,6 +64,7 @@ export default function GraphView({
   activeEdge = null,
   doneVertices = [],
   vertexBadges,
+  vertexColors,
 }: GraphViewProps) {
   const done = new Set(doneVertices);
 
@@ -110,19 +126,36 @@ export default function GraphView({
       <g>
         {VERTICES.map(({ id, x, y }) => {
           const isActive = id === activeVertex;
-          const isDone = !isActive && done.has(id);
-          const fill = isActive ? COLORS.activeFill : isDone ? COLORS.doneFill : COLORS.vertexFill;
-          const stroke = isActive
-            ? COLORS.activeStroke
-            : isDone
-              ? COLORS.doneStroke
-              : COLORS.vertexStroke;
-          const textColor = isDone ? COLORS.doneText : COLORS.vertexText;
+          let fill: string;
+          let stroke: string;
+          let textColor: string;
+          let strokeWidth = 2;
+
+          if (vertexColors) {
+            // DFS: 색 상태로 채우고, 현재 정점은 주황 테두리로만 표시
+            [fill, stroke, textColor] = DFS_STYLE[vertexColors[id] ?? 'white'];
+            if (isActive) {
+              stroke = COLORS.activeStroke;
+              strokeWidth = 4;
+            }
+          } else {
+            const isDone = !isActive && done.has(id);
+            fill = isActive ? COLORS.activeFill : isDone ? COLORS.doneFill : COLORS.vertexFill;
+            stroke = isActive ? COLORS.activeStroke : isDone ? COLORS.doneStroke : COLORS.vertexStroke;
+            textColor = isDone ? COLORS.doneText : COLORS.vertexText;
+          }
           const badge = vertexBadges?.[id];
 
           return (
             <g key={id}>
-              <circle cx={x} cy={y} r={R} fill={fill} stroke={stroke} strokeWidth={2} />
+              <circle
+                cx={x}
+                cy={y}
+                r={R}
+                fill={fill}
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+              />
               <text
                 x={x}
                 y={y}

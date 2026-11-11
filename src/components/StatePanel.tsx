@@ -1,11 +1,17 @@
-import type { Step } from '../algo/types';
+import type { Step, VertexColor } from '../algo/types';
 
 type StatePanelProps = {
   step: Step;
 };
 
+const COLOR_LABEL: Record<VertexColor, string> = {
+  white: '미방문',
+  gray: '탐색 중',
+  black: '종료',
+};
+
 export default function StatePanel({ step }: StatePanelProps) {
-  const { indegree, queue, result } = step;
+  const { indegree, queue, color, callStack, finishStack, result } = step;
 
   return (
     <div className="state-panel">
@@ -49,6 +55,69 @@ export default function StatePanel({ step }: StatePanelProps) {
             )}
             <span className="queue-end">← back</span>
           </div>
+        </div>
+      )}
+
+      {color && (
+        <div className="state-row">
+          <div className="state-label">색</div>
+          <table className="state-table">
+            <thead>
+              <tr>
+                {Object.keys(color).map((id) => (
+                  <th key={id}>{id}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                {Object.entries(color).map(([id, c]) => (
+                  <td key={id} className={`color-${c}`} title={COLOR_LABEL[c]}>
+                    {c}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {(callStack || finishStack) && (
+        <div className="state-row stacks">
+          {callStack && (
+            <div className="stack-box">
+              <div className="state-label">호출 스택</div>
+              {/* column-reverse: 배열의 첫 원소(바닥)가 아래, 마지막 원소(top)가 위 */}
+              <div className="call-stack">
+                <span className="stack-floor">바닥</span>
+                {callStack.map((id, i) => (
+                  <span
+                    key={id}
+                    className={`chip${i === callStack.length - 1 ? ' top' : ''}`}
+                  >
+                    {id}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {finishStack && (
+            <div className="stack-box">
+              <div className="state-label">종료 스택</div>
+              <div className="queue">
+                <span className="queue-end">먼저 종료 →</span>
+                {finishStack.length === 0 ? (
+                  <span className="empty">(비어 있음)</span>
+                ) : (
+                  finishStack.map((id) => (
+                    <span key={id} className="chip chip-black">
+                      {id}
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

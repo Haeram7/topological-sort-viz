@@ -19,6 +19,7 @@ export default function AlgoPanel({ title, steps, stepIndex }: AlgoPanelProps) {
         activeEdge={step.activeEdge}
         doneVertices={step.doneVertices}
         vertexBadges={step.indegree}
+        vertexColors={step.color}
       />
       <p className="caption">{step.caption}</p>
       <StatePanel step={step} />
