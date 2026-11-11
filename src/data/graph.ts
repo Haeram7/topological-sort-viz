@@ -40,3 +40,6 @@ export const ADJ: Record<VertexId, VertexId[]> = (() => {
 })();
 
 export const VIEWBOX = '0 0 680 340';
+
+// 간선을 식별하는 키 ("A->B")
+export const edgeKey = (from: string, to: string) => `${from}->${to}`;

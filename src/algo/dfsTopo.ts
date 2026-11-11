@@ -14,16 +14,20 @@ export function buildDfsSteps(): Step[] {
   const snapshot = (
     active: string | null,
     activeEdge: [string, string] | null,
+    headline: string,
     caption: string,
+    skippedEdges: [string, string][] = [],
   ): Step => ({
     result: [],
     active,
     activeEdge,
     doneVertices: [...finishStack],
+    headline,
     caption,
     color: { ...color },
     callStack: [...callStack],
     finishStack: [...finishStack],
+    skippedEdges,
   });
 
   // 0. 입력 그래프 (Kahn과 동일)
@@ -32,6 +36,7 @@ export function buildDfsSteps(): Step[] {
     active: null,
     activeEdge: null,
     doneVertices: [],
+    headline: '입력 그래프',
     caption: '입력 그래프. 아직 아무 것도 처리하지 않은 상태',
   });
 
@@ -43,24 +48,41 @@ export function buildDfsSteps(): Step[] {
         `${join(skipped)}와 그 뒤에 와야 할 정점들은 이미 종료 스택에 들어가 있어, ` +
         `뒤집었을 때 ${u}보다 뒤에 오는 것이 이미 보장되기 때문이다. `;
 
+  const skipEdges = (u: VertexId, skipped: VertexId[]): [string, string][] =>
+    skipped.map((v) => [u, v]);
+
+  const skipTail = (skipped: VertexId[]) =>
+    skipped.length === 0 ? '' : ` · ${join(skipped)}는 이미 종료라 건너뜀`;
+
   function visit(u: VertexId, parent: VertexId | null, parentSkipped: VertexId[]) {
     color[u] = 'gray';
     callStack.push(u);
 
-    let caption: string;
     if (parent === null) {
-      caption =
-        `알파벳 순으로 첫 미방문 정점인 ${u}에서 DFS를 시작한다. ${u}를 gray(탐색 중)로 칠하고 호출 스택에 넣는다. ` +
-        `하강하는 동안에는 아무 정점도 결과에 확정하지 않는다. ` +
-        `${u} 뒤에 와야 할 정점들이 모두 끝났는지 아직 모르기 때문이다.`;
+      steps.push(
+        snapshot(
+          u,
+          null,
+          `${u}에서 DFS 시작`,
+          `알파벳 순으로 첫 미방문 정점인 ${u}에서 DFS를 시작한다. ${u}를 gray(탐색 중)로 칠하고 호출 스택에 넣는다. ` +
+            `하강하는 동안에는 아무 정점도 결과에 확정하지 않는다. ` +
+            `${u} 뒤에 와야 할 정점들이 모두 끝났는지 아직 모르기 때문이다.`,
+        ),
+      );
     } else {
-      caption =
-        skipNote(parent, parentSkipped) +
-        `${parent}의 이웃 중 알파벳 순으로 첫 미방문 정점인 ${u}로 내려간다. ` +
-        `${u}를 gray로 칠하고 호출 스택에 넣는다 (스택 깊이 ${callStack.length}). ` +
-        `아직 ${u}에서 갈 수 있는 정점들이 끝나지 않았으므로 결과는 여전히 비어 있다.`;
+      steps.push(
+        snapshot(
+          u,
+          [parent, u],
+          `${parent} → ${u} 진입 (스택 깊이 ${callStack.length})${skipTail(parentSkipped)}`,
+          skipNote(parent, parentSkipped) +
+            `${parent}의 이웃 중 알파벳 순으로 첫 미방문 정점인 ${u}로 내려간다. ` +
+            `${u}를 gray로 칠하고 호출 스택에 넣는다 (스택 깊이 ${callStack.length}). ` +
+            `아직 ${u}에서 갈 수 있는 정점들이 끝나지 않았으므로 결과는 여전히 비어 있다.`,
+          skipEdges(parent, parentSkipped),
+        ),
+      );
     }
-    steps.push(snapshot(u, parent ? [parent, u] : null, caption));
 
     let skipped: VertexId[] = [];
     for (const v of ADJ[u]) {
@@ -94,7 +116,15 @@ export function buildDfsSteps(): Step[] {
         `${u}를 black으로 칠하고 호출 스택에서 꺼내 종료 스택에 쌓는다. ` +
         `나중에 뒤집으면 ${u}는 그 정점들보다 앞에 온다.`;
     }
-    steps.push(snapshot(u, null, finishCaption));
+    steps.push(
+      snapshot(
+        u,
+        null,
+        `${u} 종료 → 종료 스택에 쌓음${skipTail(skipped)}`,
+        finishCaption,
+        skipEdges(u, skipped),
+      ),
+    );
   }
 
   for (const id of ids) {
@@ -104,7 +134,7 @@ export function buildDfsSteps(): Step[] {
   // 마지막: 종료 스택을 뒤집어 결과 생성
   const result = [...finishStack].reverse();
   steps.push({
-    ...snapshot(null, null, ''),
+    ...snapshot(null, null, `종료 스택을 뒤집어 결과 도출: ${result.join(' ')}`, ''),
     result,
     doneVertices: [...result],
     caption:

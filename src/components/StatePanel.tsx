@@ -1,7 +1,18 @@
 import type { Step, VertexColor } from '../algo/types';
 
+// 이 알고리즘에 어떤 상태 항목이 있는지 (단계마다 레이아웃이 흔들리지 않게 자리를 미리 잡아 둔다)
+export type StateLayout = {
+  indegree: boolean;
+  queue: boolean;
+  color: boolean;
+  callStack: boolean;
+  finishStack: boolean;
+  maxCallDepth: number;
+};
+
 type StatePanelProps = {
   step: Step;
+  layout: StateLayout;
 };
 
 const COLOR_LABEL: Record<VertexColor, string> = {
@@ -10,27 +21,35 @@ const COLOR_LABEL: Record<VertexColor, string> = {
   black: '종료',
 };
 
-export default function StatePanel({ step }: StatePanelProps) {
-  const { indegree, queue, color, callStack, finishStack, result } = step;
+// 해당 단계에 값이 없으면 자리만 차지하고 보이지 않게 한다
+const rowClass = (present: boolean, extra = '') =>
+  `state-row${extra ? ` ${extra}` : ''}${present ? '' : ' is-hidden'}`;
+
+export default function StatePanel({ step, layout }: StatePanelProps) {
+  const { indegree, queue, color, callStack, finishStack, result, doneVertices } = step;
+  const done = new Set(doneVertices);
 
   return (
     <div className="state-panel">
-      {indegree && (
-        <div className="state-row">
+      {layout.indegree && (
+        <div className={rowClass(!!indegree)}>
           <div className="state-label">진입차수</div>
           <table className="state-table">
             <thead>
               <tr>
-                {Object.keys(indegree).map((id) => (
+                {Object.keys(indegree ?? {}).map((id) => (
                   <th key={id}>{id}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               <tr>
-                {Object.entries(indegree).map(([id, deg]) => (
-                  <td key={id} className={deg === 0 ? 'zero' : undefined}>
-                    {deg}
+                {Object.entries(indegree ?? {}).map(([id, deg]) => (
+                  <td
+                    key={id}
+                    className={done.has(id) ? 'is-done' : deg === 0 ? 'is-zero' : undefined}
+                  >
+                    {done.has(id) ? '–' : deg}
                   </td>
                 ))}
               </tr>
@@ -39,39 +58,39 @@ export default function StatePanel({ step }: StatePanelProps) {
         </div>
       )}
 
-      {queue && (
-        <div className="state-row">
+      {layout.queue && (
+        <div className={rowClass(!!queue)}>
           <div className="state-label">큐</div>
-          <div className="queue">
-            <span className="queue-end">front →</span>
-            {queue.length === 0 ? (
-              <span className="empty">(비어 있음)</span>
-            ) : (
+          <div className="seq">
+            <span className="seq-end">front</span>
+            {queue?.length ? (
               queue.map((id) => (
-                <span key={id} className="chip">
+                <span key={id} className="chip chip-waiting">
                   {id}
                 </span>
               ))
+            ) : (
+              <span className="empty">비어 있음</span>
             )}
-            <span className="queue-end">← back</span>
+            <span className="seq-end">back</span>
           </div>
         </div>
       )}
 
-      {color && (
-        <div className="state-row">
+      {layout.color && (
+        <div className={rowClass(!!color)}>
           <div className="state-label">색</div>
           <table className="state-table">
             <thead>
               <tr>
-                {Object.keys(color).map((id) => (
+                {Object.keys(color ?? {}).map((id) => (
                   <th key={id}>{id}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               <tr>
-                {Object.entries(color).map(([id, c]) => (
+                {Object.entries(color ?? {}).map(([id, c]) => (
                   <td key={id} className={`color-${c}`} title={COLOR_LABEL[c]}>
                     {c}
                   </td>
@@ -82,38 +101,43 @@ export default function StatePanel({ step }: StatePanelProps) {
         </div>
       )}
 
-      {(callStack || finishStack) && (
-        <div className="state-row stacks">
-          {callStack && (
+      {(layout.callStack || layout.finishStack) && (
+        <div className={rowClass(!!(callStack || finishStack), 'stacks')}>
+          {layout.callStack && (
             <div className="stack-box">
               <div className="state-label">호출 스택</div>
               {/* column-reverse: 배열의 첫 원소(바닥)가 아래, 마지막 원소(top)가 위 */}
-              <div className="call-stack">
-                <span className="stack-floor">바닥</span>
-                {callStack.map((id, i) => (
-                  <span
-                    key={id}
-                    className={`chip${i === callStack.length - 1 ? ' top' : ''}`}
-                  >
-                    {id}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {finishStack && (
-            <div className="stack-box">
-              <div className="state-label">종료 스택</div>
-              <div className="queue">
-                <span className="queue-end">먼저 종료 →</span>
-                {finishStack.length === 0 ? (
-                  <span className="empty">(비어 있음)</span>
-                ) : (
-                  finishStack.map((id) => (
-                    <span key={id} className="chip chip-black">
+              <div
+                className="call-stack"
+                style={{ minHeight: `calc(${layout.maxCallDepth} * var(--chip-h) + ${layout.maxCallDepth - 1} * 4px + 16px)` }}
+              >
+                {callStack?.length ? (
+                  callStack.map((id, i) => (
+                    <span
+                      key={id}
+                      className={`chip chip-waiting${i === callStack.length - 1 ? ' chip-top' : ''}`}
+                    >
                       {id}
                     </span>
                   ))
+                ) : (
+                  <span className="empty">비어 있음</span>
+                )}
+              </div>
+            </div>
+          )}
+          {layout.finishStack && (
+            <div className="stack-box grow">
+              <div className="state-label">종료 스택 (먼저 종료된 순)</div>
+              <div className="seq">
+                {finishStack?.length ? (
+                  finishStack.map((id) => (
+                    <span key={id} className="chip chip-done">
+                      {id}
+                    </span>
+                  ))
+                ) : (
+                  <span className="empty">비어 있음</span>
                 )}
               </div>
             </div>
@@ -123,14 +147,14 @@ export default function StatePanel({ step }: StatePanelProps) {
 
       <div className="state-row">
         <div className="state-label">결과</div>
-        <div className="result">
+        <div className="seq">
           {result.length === 0 ? (
-            <span className="empty">(아직 없음)</span>
+            <span className="empty">아직 없음</span>
           ) : (
             result.map((id, i) => (
-              <span key={id} className="result-item">
+              <span key={id} className="seq-item">
                 {i > 0 && <span className="arrow">→</span>}
-                <span className="chip">{id}</span>
+                <span className="chip chip-done">{id}</span>
               </span>
             ))
           )}

@@ -24,6 +24,7 @@ export function buildKahnSteps(): Step[] {
     active: null,
     activeEdge: null,
     doneVertices: [],
+    headline: '입력 그래프',
     caption: '입력 그래프. 아직 아무 것도 처리하지 않은 상태',
   });
 
@@ -42,6 +43,7 @@ export function buildKahnSteps(): Step[] {
     doneVertices: [],
     indegree: { ...indegree },
     queue: [...queue],
+    headline: `진입차수 계산 → 진입차수 0인 ${join(queue)}를 큐에 넣음`,
     caption:
       `모든 간선을 훑어 각 정점의 진입차수(들어오는 간선 수)를 계산했다: ${summary}. ` +
       `진입차수가 0인 정점은 ${join(queue)}뿐이다. ` +
@@ -101,6 +103,9 @@ export function buildKahnSteps(): Step[] {
       doneVertices: [...result],
       indegree: { ...indegree },
       queue: [...queue],
+      headline:
+        `${u}를 꺼내 결과에 추가` +
+        (newlyReady.length > 0 ? ` → ${join(newlyReady)} 큐에 들어감` : ''),
       caption,
     });
   }
@@ -114,6 +119,7 @@ export function buildKahnSteps(): Step[] {
     doneVertices: [...result],
     indegree: { ...indegree },
     queue: [],
+    headline: ok ? `완료: ${result.join(' ')}` : '사이클 발견',
     caption: ok
       ? `큐가 비었고 결과에 ${result.length}개 정점이 모두 들어갔다 (result.length === ${ids.length}). ` +
         `사이클 없이 모든 정점이 처리되었으므로 ${result.join(' ')}는 올바른 위상 순서다.`
