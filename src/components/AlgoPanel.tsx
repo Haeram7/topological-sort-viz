@@ -91,15 +91,15 @@ function Legend({ dfs }: { dfs: boolean }) {
       <div className="legend-row">
         <span className="legend-item">
           <i className="swatch swatch-idle" />
-          {dfs ? '미방문' : '미처리'}
+          {dfs ? '미방문 (white)' : '미처리'}
         </span>
         <span className="legend-item">
           <i className="swatch swatch-waiting" />
-          {dfs ? '탐색 중' : '큐에 있음'}
+          {dfs ? '탐색 중 (gray)' : '큐에 있음'}
         </span>
         <span className="legend-item">
           <i className="swatch swatch-done" />
-          {dfs ? '종료' : '결과에 추가됨'}
+          {dfs ? '종료 (black)' : '결과에 추가됨'}
         </span>
         <span className="legend-item">
           <i className="swatch swatch-current" />

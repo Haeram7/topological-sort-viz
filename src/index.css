@@ -84,7 +84,8 @@ h2 {
 
 .compare {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, 1fr): 표 같은 내용이 열 폭을 밀어내지 않게 한다 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   align-items: stretch;
 }
@@ -98,7 +99,25 @@ h2 {
 
 @media (max-width: 899px) {
   .compare {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .algo-panel,
+  .final-results {
+    padding: 14px;
+  }
+  .state-table th,
+  .state-table td {
+    width: 36px;
+  }
+  .controls {
+    gap: 6px;
+    padding: 8px;
+  }
+  .controls button {
+    padding: 6px 8px;
   }
 }
 
@@ -612,6 +631,11 @@ h2 {
   font-size: 0.85rem;
 }
 
+.edge-check-desc {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
 .edge-check-wrap {
   overflow-x: auto;
 }

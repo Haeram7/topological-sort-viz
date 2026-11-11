@@ -49,7 +49,7 @@ export default function StatePanel({ step, layout }: StatePanelProps) {
                     key={id}
                     className={done.has(id) ? 'is-done' : deg === 0 ? 'is-zero' : undefined}
                   >
-                    {done.has(id) ? '–' : deg}
+                    {deg}
                   </td>
                 ))}
               </tr>

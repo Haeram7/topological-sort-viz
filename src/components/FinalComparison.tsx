@@ -53,6 +53,10 @@ export default function FinalComparison({ results }: FinalComparisonProps) {
             <span className="final-hint"> 강조된 칸은 두 결과에서 순서가 갈리는 위치.</span>
           </p>
 
+          <p className="edge-check-desc">
+            숫자는 각 결과에서 정점의 위치(1부터). 모든 간선에서 앞 숫자 &lt; 뒤 숫자이면 올바른
+            위상 순서다.
+          </p>
           <div className="edge-check-wrap">
             <table className="edge-check">
               <thead>
